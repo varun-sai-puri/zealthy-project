@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 
+
 // Form fields
 type FormValues = {
   email: string;
@@ -14,12 +15,18 @@ type FormValues = {
   birthDate?: string;
 };
 
+
 type ConfigItem = { pageNumber: number; component: string };
+
 
 export default function Onboarding() {
   const [step, setStep] = useState(1);
+  const [isComplete, setIsComplete] = useState(false);
   const [config, setConfig] = useState<Record<number, string[]>>({ 2: ["about", "birthdate"], 3: ["address"] });
+
+
   const { register, handleSubmit, formState } = useForm<FormValues>({ mode: 'onChange' });
+
 
   useEffect(() => {
     fetch("/api/config")
@@ -37,88 +44,107 @@ export default function Onboarding() {
       });
   }, []);
 
+
   const onSubmit = handleSubmit(data => {
     fetch("/api/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }).then(() => {
-      setStep(prev => (prev < 3 ? prev + 1 : 1));
+      if (step < 3) {
+        setStep(prev => prev + 1);
+      } else {
+        setIsComplete(true); // ✅ Final step done
+      }
     });
   });
 
+
   const progress = [1, 2, 3];
+
 
   return (
     <div className="wrapper">
       <div className="card">
-        <div className="progress-bar">
-          {progress.map(num => (
-            <div key={num} className={`step-circle ${step >= num ? 'active' : ''}`}>
-              {num}
+        {isComplete ? (
+          <div className="thank-you">
+            <h2>🎉 Thank you for completing onboarding!</h2>
+            <p>We’ve saved your information successfully.</p>
+          </div>
+        ) : (
+          <>
+            <div className="progress-bar">
+              {progress.map(num => (
+                <div key={num} className={`step-circle ${step >= num ? 'active' : ''}`}>
+                  {num}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <h2>Step {step} of 3</h2>
-        <form onSubmit={onSubmit}>
-          {step === 1 && (
-            <div className="fields">
-              <label>
-                Email
-                <input {...register("email", { required: true })} />
-              </label>
-              <label>
-                Password
-                <input type="password" {...register("password", { required: true })} />
-              </label>
-            </div>
-          )}
+            <h2>Step {step} of 3</h2>
+            <form onSubmit={onSubmit}>
+              {step === 1 && (
+                <div className="fields">
+                  <label>
+                    Email
+                    <input {...register("email", { required: true })} />
+                  </label>
+                  <label>
+                    Password
+                    <input type="password" {...register("password", { required: true })} />
+                  </label>
+                </div>
+              )}
 
-          {step > 1 && (
-            <div className="fields">
-              {(config[step] || []).map(comp => {
-                switch (comp) {
-                  case "about":
-                    return (
-                      <label key={comp}>
-                        About Me
-                        <textarea {...register("about", { required: true })} />
-                      </label>
-                    );
-                  case "address":
-                    return (
-                      <div key={comp} className="address-group">
-                        {['street', 'city', 'state', 'zip'].map(field => (
-                          <label key={field}>
-                            {field.charAt(0).toUpperCase() + field.slice(1)}
-                            <input {...register(field as any, { required: true })} />
+
+              {step > 1 && (
+                <div className="fields">
+                  {(config[step] || []).map(comp => {
+                    switch (comp) {
+                      case "about":
+                        return (
+                          <label key={comp}>
+                            About Me
+                            <textarea {...register("about", { required: true })} />
                           </label>
-                        ))}
-                      </div>
-                    );
-                  case "birthdate":
-                    return (
-                      <label key={comp}>
-                        Birth Date
-                        <input type="date" {...register("birthDate", { required: true })} />
-                      </label>
-                    );
-                  default:
-                    return null;
-                }
-              })}
-            </div>
-          )}
+                        );
+                      case "address":
+                        return (
+                          <div key={comp} className="address-group">
+                            {['street', 'city', 'state', 'zip'].map(field => (
+                              <label key={field}>
+                                {field.charAt(0).toUpperCase() + field.slice(1)}
+                                <input {...register(field as any, { required: true })} />
+                              </label>
+                            ))}
+                          </div>
+                        );
+                      case "birthdate":
+                        return (
+                          <label key={comp}>
+                            Birth Date
+                            <input type="date" {...register("birthDate", { required: true })} />
+                          </label>
+                        );
+                      default:
+                        return null;
+                    }
+                  })}
+                </div>
+              )}
 
-          <button
-            type="submit"
-            disabled={!formState.isValid}
-            className="btn"
-          >
-            {step < 3 ? "Next" : "Finish"}
-          </button>
-        </form>
+
+              <button
+                type="submit"
+                disabled={!formState.isValid}
+                className="btn"
+              >
+                {step < 3 ? "Next" : "Finish"}
+              </button>
+            </form>
+          </>
+        )}
       </div>
+
 
       <style jsx>{`
         .wrapper {
@@ -221,7 +247,19 @@ export default function Onboarding() {
         .btn:hover:enabled {
           background-color: #005bb5;
         }
+        .thank-you {
+          text-align: center;
+        }
+        .thank-you h2 {
+          margin-bottom: 16px;
+          color: #0070f3;
+        }
+        .thank-you p {
+          font-size: 16px;
+          color: #555;
+        }
       `}</style>
     </div>
   );
 }
+
