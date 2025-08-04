@@ -15,6 +15,9 @@ type FormValues = {
   birthDate?: string;
 };
 
+type AddressField = 'street' | 'city' | 'state' | 'zip';
+
+
 
 type ConfigItem = { pageNumber: number; component: string };
 
@@ -113,7 +116,7 @@ export default function Onboarding() {
                             {['street', 'city', 'state', 'zip'].map(field => (
                               <label key={field}>
                                 {field.charAt(0).toUpperCase() + field.slice(1)}
-                                <input {...register(field as any, { required: true })} />
+                                <input {...register(field as AddressField, { required: true })} />
                               </label>
                             ))}
                           </div>

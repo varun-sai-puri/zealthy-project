@@ -15,7 +15,7 @@ type User = {
 }
 
 // simple in-memory store
-let usersStore: User[] = []
+const usersStore: User[] = []
 
 export default function handler(
   req: NextApiRequest,
